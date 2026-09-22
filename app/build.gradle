@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace 'com.focusdesk.aiproductivity'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId 'com.focusdesk.aiproductivity'

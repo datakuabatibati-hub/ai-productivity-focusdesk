@@ -7,33 +7,48 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
-      - name: Install Android SDK 34
+
+      - name: Install Android SDK 35
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-      - name: Set up Gradle 8.7
+          sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+
+      - name: Set up Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
-          cache-provider: basic
+          gradle-version: '8.9'
+
+      - name: Show build configuration
+        run: |
+          java -version
+          gradle -v
+          grep -n "compileSdk\|targetSdk\|minSdk" app/build.gradle || true
+          cat build.gradle
+
       - name: Build debug APK
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon assembleDebug --stacktrace
+
       - name: Rename APK
         run: cp app/build/outputs/apk/debug/app-debug.apk AI-Productivity-FocusDesk.apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AI-Productivity-FocusDesk-APK
           path: AI-Productivity-FocusDesk.apk
           if-no-files-found: error
+          retention-days: 14
