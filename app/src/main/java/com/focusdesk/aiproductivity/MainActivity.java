@@ -4,7 +4,6 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,7 +12,6 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.speech.RecognizerIntent;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -30,25 +28,31 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS = ProductivityStore.PREFS;
 
-    private TextView tvCoach, tvCurrentTask, tvMode, tvPresence, tvToday, tvStats, tvSession, tvInbox, tvStatus;
+    private TextView tvCoach, tvCurrentTask, tvMode, tvPresence, tvToday, tvStats, tvSession;
+    private TextView tvInbox, tvStatus, tvKinerjaStatus, tvSyncQueue;
     private ProgressBar progressTarget;
     private EditText etTask1, etTask2, etTask3;
-    private EditText etBotToken, etChatId, etInterval, etAwaySeconds, etAlertSeconds, etAutoBreakMinutes, etTargetMinutes;
+    private EditText etBotToken, etChatId, etInterval, etAwaySeconds, etAlertSeconds;
+    private EditText etAutoBreakMinutes, etTargetMinutes, etGasUrl, etGasApiKey;
     private Spinner spCategory;
+
+    private enum SpeechMode { CAPTURE_IDE, CAPTURE_KINERJA }
+    private SpeechMode pendingSpeechMode = SpeechMode.CAPTURE_IDE;
+    private boolean recoveryDialogVisible = false;
 
     private final android.os.Handler handler = new android.os.Handler(android.os.Looper.getMainLooper());
 
     private final ActivityResultLauncher<String> cameraPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                tvStatus.setText(granted ? "Izin kamera OK." : "Izin kamera ditolak. Monitoring presence tidak dapat berjalan.");
-            });
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted ->
+                    tvStatus.setText(granted
+                            ? "Izin kamera OK."
+                            : "Izin kamera ditolak. Monitoring presence tidak dapat berjalan."));
 
     private final ActivityResultLauncher<String> notificationPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {});
@@ -56,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private final ActivityResultLauncher<String> audioPermissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
                 if (granted) launchSpeechRecognizer();
-                else showTextCaptureDialog();
+                else Toast.makeText(this, "Izin mikrofon diperlukan untuk capture suara.", Toast.LENGTH_LONG).show();
             });
 
     private final ActivityResultLauncher<Intent> speechLauncher =
@@ -65,6 +69,7 @@ public class MainActivity extends AppCompatActivity {
     private final Runnable uiTicker = new Runnable() {
         @Override public void run() {
             updateUi();
+            maybeShowRecoveryPrompt();
             handler.postDelayed(this, 1000L);
         }
     };
@@ -81,6 +86,16 @@ public class MainActivity extends AppCompatActivity {
         requestNeededPermissions();
         updateUi();
         handler.post(uiTicker);
+
+        // Coba kirim ulang catatan kinerja yang tertunda tanpa mengganggu user.
+        KinerjaSyncClient.retryPending(this, null);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        KinerjaSyncClient.retryPending(this, null);
+        handler.postDelayed(this::maybeShowRecoveryPrompt, 350L);
     }
 
     private void bindViews() {
@@ -93,12 +108,13 @@ public class MainActivity extends AppCompatActivity {
         tvSession = findViewById(R.id.tvSession);
         tvInbox = findViewById(R.id.tvInbox);
         tvStatus = findViewById(R.id.tvStatus);
+        tvKinerjaStatus = findViewById(R.id.tvKinerjaStatus);
+        tvSyncQueue = findViewById(R.id.tvSyncQueue);
         progressTarget = findViewById(R.id.progressTarget);
 
         etTask1 = findViewById(R.id.etTask1);
         etTask2 = findViewById(R.id.etTask2);
         etTask3 = findViewById(R.id.etTask3);
-
         spCategory = findViewById(R.id.spCategory);
 
         etBotToken = findViewById(R.id.etBotToken);
@@ -108,6 +124,8 @@ public class MainActivity extends AppCompatActivity {
         etAlertSeconds = findViewById(R.id.etAlertSeconds);
         etAutoBreakMinutes = findViewById(R.id.etAutoBreakMinutes);
         etTargetMinutes = findViewById(R.id.etTargetMinutes);
+        etGasUrl = findViewById(R.id.etGasUrl);
+        etGasApiKey = findViewById(R.id.etGasApiKey);
     }
 
     private void setupCategorySpinner() {
@@ -128,18 +146,42 @@ public class MainActivity extends AppCompatActivity {
         findViewById(R.id.btnTask2).setOnClickListener(v -> selectTask(etTask2.getText().toString()));
         findViewById(R.id.btnTask3).setOnClickListener(v -> selectTask(etTask3.getText().toString()));
 
-        findViewById(R.id.btnFocus).setOnClickListener(v -> startFocus());
+        findViewById(R.id.btnFocus).setOnClickListener(v -> {
+            getSharedPreferences(PREFS, MODE_PRIVATE).edit().putLong("sprint_target_min", 0L).apply();
+            startFocus();
+        });
         findViewById(R.id.btnBreak).setOnClickListener(v -> sendServiceCommand(FocusMonitorService.ACTION_BREAK));
         findViewById(R.id.btnDone).setOnClickListener(v -> sendServiceCommand(FocusMonitorService.ACTION_DONE));
 
+        findViewById(R.id.btnSprint10).setOnClickListener(v -> startSprint(10));
+        findViewById(R.id.btnSprint25).setOnClickListener(v -> startSprint(25));
+        findViewById(R.id.btnSprint45).setOnClickListener(v -> startSprint(45));
+
         findViewById(R.id.btnDistraction).setOnClickListener(v -> showDistractionDialog());
         findViewById(R.id.btnStuck).setOnClickListener(v -> showRescueDialog());
-        findViewById(R.id.btnCapture).setOnClickListener(v -> startCapture());
+        findViewById(R.id.btnCaptureIdea).setOnClickListener(v -> startVoiceCapture(SpeechMode.CAPTURE_IDE));
+        findViewById(R.id.btnVoiceKinerja).setOnClickListener(v -> startVoiceCapture(SpeechMode.CAPTURE_KINERJA));
         findViewById(R.id.btnInbox).setOnClickListener(v -> showInbox());
         findViewById(R.id.btnSummary).setOnClickListener(v -> showSummary());
         findViewById(R.id.btnChatGPT).setOnClickListener(v -> shareToChatGPT());
 
+        findViewById(R.id.btnRetrySync).setOnClickListener(v -> {
+            tvKinerjaStatus.setText("Mencoba sinkronisasi ulang…");
+            KinerjaSyncClient.retryPending(this, (success, message) -> {
+                tvKinerjaStatus.setText((success ? "✅ " : "⚠️ ") + message);
+                updateUi();
+            });
+        });
+
         findViewById(R.id.btnSaveSettings).setOnClickListener(v -> saveSettingsFromUi());
+        findViewById(R.id.btnTestGas).setOnClickListener(v -> {
+            saveSettingsFromUi();
+            tvKinerjaStatus.setText("Menguji koneksi GAS…");
+            KinerjaSyncClient.testConnection(this, (success, message) -> {
+                tvKinerjaStatus.setText((success ? "✅ " : "⚠️ ") + message);
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            });
+        });
         findViewById(R.id.btnTestTelegram).setOnClickListener(v -> {
             saveSettingsFromUi();
             sendServiceCommand(FocusMonitorService.ACTION_TEST_TELEGRAM);
@@ -158,8 +200,22 @@ public class MainActivity extends AppCompatActivity {
                 .putString("current_category", String.valueOf(spCategory.getSelectedItem()))
                 .apply();
         ProductivityStore.addEvent(this, "TASK_SELECTED", task, String.valueOf(spCategory.getSelectedItem()), 0L, "");
-        tvStatus.setText("Tugas aktif dipilih. Tekan FOCUS untuk mulai.");
+        tvStatus.setText("Tugas aktif dipilih. Kerjakan hanya tugas ini sampai DONE/BREAK.");
         updateUi();
+    }
+
+    private void startSprint(int minutes) {
+        SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if ("FOCUS".equals(p.getString("runtime_mode", "IDLE"))) {
+            Toast.makeText(this, "Selesaikan / BREAK sesi aktif dulu sebelum memilih sprint baru.", Toast.LENGTH_LONG).show();
+            return;
+        }
+        p.edit()
+                .putLong("sprint_target_min", minutes)
+                .putBoolean("runtime_sprint_alerted", false)
+                .apply();
+        Toast.makeText(this, "Sprint " + minutes + " menit dipilih.", Toast.LENGTH_SHORT).show();
+        startFocus();
     }
 
     private void startFocus() {
@@ -176,7 +232,7 @@ public class MainActivity extends AppCompatActivity {
         }
         p.edit().putString("current_category", String.valueOf(spCategory.getSelectedItem())).apply();
         sendServiceCommand(FocusMonitorService.ACTION_FOCUS);
-        tvStatus.setText("Focus Service aktif. Setelah service muncul, layar boleh dimatikan.");
+        tvStatus.setText("Focus Service aktif. Setelah notifikasi service muncul, layar boleh dimatikan.");
     }
 
     private void showDistractionDialog() {
@@ -185,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle("Apa yang menarik perhatianmu?")
                 .setItems(options, (d, which) -> {
                     ProductivityStore.incrementDistraction(this, options[which]);
-                    Toast.makeText(this, "Dicatat. Kembali ke satu langkah berikutnya.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Dicatat. Kembali ke SATU langkah berikutnya.", Toast.LENGTH_SHORT).show();
                     updateUi();
                 })
                 .setNegativeButton("Batal", null)
@@ -202,8 +258,8 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("ADHD Rescue")
                 .setMessage("Jangan selesaikan semuanya. Cukup langkah pertama.\n\n" + steps)
-                .setPositiveButton("MULAI SEKARANG", (d, w) -> startFocus())
-                .setNeutralButton("CAPTURE IDE", (d, w) -> startCapture())
+                .setPositiveButton("MULAI 10 MENIT", (d, w) -> startSprint(10))
+                .setNeutralButton("PARKIR IDE", (d, w) -> startVoiceCapture(SpeechMode.CAPTURE_IDE))
                 .setNegativeButton("Tutup", null)
                 .show();
     }
@@ -222,11 +278,13 @@ public class MainActivity extends AppCompatActivity {
         if (c.contains("layanan") || c.contains("tamu")) {
             return "Tugas: " + task + "\n\n1. Catat kebutuhan orang tersebut.\n2. Kerjakan satu langkah paling jelas.\n3. Catat follow-up bila belum selesai.";
         }
-        return "Tugas: " + task + "\n\n1. Buka alat/file yang dibutuhkan.\n2. Kerjakan hanya 5 menit.\n3. Selesaikan satu unit kecil.\n4. Evaluasi setelahnya, bukan sekarang.";
+        return "Tugas: " + task + "\n\n1. Buka alat/file yang dibutuhkan.\n2. Kerjakan hanya 5–10 menit.\n3. Selesaikan satu unit kecil.\n4. Evaluasi setelahnya, bukan sekarang.";
     }
 
-    private void startCapture() {
-        if (Build.VERSION.SDK_INT >= 23 && ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+    private void startVoiceCapture(SpeechMode mode) {
+        pendingSpeechMode = mode;
+        if (Build.VERSION.SDK_INT >= 23 &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO);
         } else {
             launchSpeechRecognizer();
@@ -237,11 +295,16 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "id-ID");
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Ucapkan ide / tugas yang ingin disimpan, lalu kembali fokus.");
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "id-ID");
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                pendingSpeechMode == SpeechMode.CAPTURE_KINERJA
+                        ? "Ucapkan pekerjaan yang baru/sedang dikerjakan. Contoh: Membuat surat rekomendasi nikah."
+                        : "Ucapkan ide yang ingin diparkir. Setelah tersimpan, kembali fokus.");
         try {
             speechLauncher.launch(intent);
         } catch (Exception e) {
-            showTextCaptureDialog();
+            Toast.makeText(this, "Pengenal suara tidak tersedia di HP ini.", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -249,43 +312,85 @@ public class MainActivity extends AppCompatActivity {
         if (result.getResultCode() == RESULT_OK && result.getData() != null) {
             ArrayList<String> results = result.getData().getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
             if (results != null && !results.isEmpty()) {
-                ProductivityStore.addInbox(this, results.get(0));
-                ProductivityStore.addEvent(this, "CAPTURE", getCurrentTask(), getCurrentCategory(), 0L, results.get(0));
-                Toast.makeText(this, "Ide disimpan. Kembali ke tugas aktif.", Toast.LENGTH_SHORT).show();
-                updateUi();
+                confirmVoiceResult(results.get(0).trim());
                 return;
             }
         }
-        showTextCaptureDialog();
+        Toast.makeText(this, "Suara belum terbaca. Tekan tombol capture dan coba lagi.", Toast.LENGTH_SHORT).show();
     }
 
-    private void showTextCaptureDialog() {
-        EditText input = new EditText(this);
-        input.setHint("Tulis ide singkat...");
+    private void confirmVoiceResult(String spoken) {
+        if (spoken.isEmpty()) return;
+        boolean work = pendingSpeechMode == SpeechMode.CAPTURE_KINERJA;
         new AlertDialog.Builder(this)
-                .setTitle("Capture ide")
-                .setView(input)
-                .setPositiveButton("Simpan", (d, w) -> {
-                    String note = input.getText().toString().trim();
-                    ProductivityStore.addInbox(this, note);
-                    ProductivityStore.addEvent(this, "CAPTURE", getCurrentTask(), getCurrentCategory(), 0L, note);
-                    updateUi();
+                .setTitle(work ? "Kirim laporan kerja?" : "Simpan ide?")
+                .setMessage("Hasil suara:\n\n“" + spoken + "”")
+                .setPositiveButton(work ? "KIRIM" : "SIMPAN", (d, w) -> {
+                    if (work) saveVoiceWork(spoken);
+                    else saveVoiceIdea(spoken);
                 })
+                .setNeutralButton("ULANGI", (d, w) -> handler.postDelayed(this::launchSpeechRecognizer, 250L))
                 .setNegativeButton("Batal", null)
+                .show();
+    }
+
+    private void saveVoiceIdea(String spoken) {
+        ProductivityStore.addInbox(this, spoken);
+        ProductivityStore.addEvent(this, "CAPTURE_IDEA", getCurrentTask(), getCurrentCategory(), 0L, spoken);
+        Toast.makeText(this, "Ide diparkir. Kembali ke tugas aktif.", Toast.LENGTH_SHORT).show();
+        updateUi();
+    }
+
+    private void saveVoiceWork(String spoken) {
+        saveSettingsFromUi();
+        tvKinerjaStatus.setText("Mengirim laporan kerja…\n" + spoken);
+        KinerjaSyncClient.sendVoiceKinerja(this, spoken, (success, message) -> {
+            SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+            String clean = p.getString("last_kinerja_text", spoken);
+            String category = p.getString("last_kinerja_category", "");
+            tvKinerjaStatus.setText((success ? "✅ " : "⚠️ ") + message +
+                    "\n" + clean + (category.isEmpty() ? "" : "\nKategori: " + category));
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            updateUi();
+        });
+    }
+
+    private void maybeShowRecoveryPrompt() {
+        if (recoveryDialogVisible) return;
+        SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
+        if (!p.getBoolean("recovery_pending", false)) return;
+
+        p.edit().putBoolean("recovery_pending", false).apply();
+        recoveryDialogVisible = true;
+        String task = p.getString("current_task", "tugas aktif");
+        new AlertDialog.Builder(this)
+                .setTitle("Kembali ke jalur")
+                .setMessage("Anda sudah kembali. Jangan evaluasi semuanya sekarang.\n\nLanjutkan satu langkah pada:\n“" + task + "”")
+                .setPositiveButton("LANJUT", (d, w) -> recoveryDialogVisible = false)
+                .setNeutralButton("STUCK", (d, w) -> {
+                    recoveryDialogVisible = false;
+                    showRescueDialog();
+                })
+                .setNegativeButton("BREAK", (d, w) -> {
+                    recoveryDialogVisible = false;
+                    sendServiceCommand(FocusMonitorService.ACTION_BREAK);
+                })
+                .setOnDismissListener(d -> recoveryDialogVisible = false)
                 .show();
     }
 
     private void showInbox() {
         JSONArray arr = ProductivityStore.getInbox(this);
         if (arr.length() == 0) {
-            new AlertDialog.Builder(this).setTitle("Inbox ide").setMessage("Belum ada ide yang ditangkap.").setPositiveButton("OK", null).show();
+            new AlertDialog.Builder(this).setTitle("Inbox ide").setMessage("Belum ada ide yang diparkir.").setPositiveButton("OK", null).show();
             return;
         }
         StringBuilder s = new StringBuilder();
         for (int i = 0; i < arr.length(); i++) {
             JSONObject o = arr.optJSONObject(i);
             if (o == null) continue;
-            s.append(i + 1).append(". ").append(o.optString("note")).append("\n   ").append(o.optString("time")).append("\n\n");
+            s.append(i + 1).append(". ").append(o.optString("note"))
+                    .append("\n   ").append(o.optString("time")).append("\n\n");
         }
         new AlertDialog.Builder(this)
                 .setTitle("Inbox ide (" + arr.length() + ")")
@@ -311,9 +416,10 @@ public class MainActivity extends AppCompatActivity {
     private void shareToChatGPT() {
         String summary = ProductivityStore.buildSummary(this, true);
         String prompt = "Analisis rekap produktivitas saya berikut sebagai coach ADHD yang praktis. " +
-                "Cari pola distraksi, waktu fokus, dan bottleneck. Jangan memberi terlalu banyak saran. " +
+                "Cari pola distraksi, waktu fokus, kinerja yang tercatat, dan bottleneck. Jangan memberi terlalu banyak saran. " +
                 "Berikan: (1) 3 temuan utama, (2) 1 perubahan sistem untuk besok, (3) urutan 3 prioritas besok, " +
-                "(4) satu aturan rescue ketika saya mulai terdistraksi. Gunakan bahasa Indonesia yang ringkas.\n\n" + summary;
+                "(4) satu aturan rescue ketika saya mulai terdistraksi, (5) apakah catatan kinerja harian sudah cukup representatif. " +
+                "Gunakan bahasa Indonesia yang ringkas.\n\n" + summary;
 
         Intent send = new Intent(Intent.ACTION_SEND);
         send.setType("text/plain");
@@ -334,7 +440,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestNeededPermissions() {
         if (!hasCameraPermission()) cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-        if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
         }
     }
@@ -359,6 +466,8 @@ public class MainActivity extends AppCompatActivity {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
                 .putString("bot_token", etBotToken.getText().toString().trim())
                 .putString("chat_id", etChatId.getText().toString().trim())
+                .putString("gas_url", etGasUrl.getText().toString().trim())
+                .putString("gas_api_key", etGasApiKey.getText().toString().trim())
                 .putLong("interval_sec", intervalSec)
                 .putLong("away_sec", awaySec)
                 .putLong("alert_sec", alertSec)
@@ -375,13 +484,15 @@ public class MainActivity extends AppCompatActivity {
         etAlertSeconds.setText(String.valueOf(alertSec));
         etAutoBreakMinutes.setText(String.valueOf(autoBreakMin));
         etTargetMinutes.setText(String.valueOf(targetMin));
-        Toast.makeText(this, "Pengaturan dan Today's 3 tersimpan.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Pengaturan tersimpan.", Toast.LENGTH_SHORT).show();
     }
 
     private void loadSettings() {
         SharedPreferences p = getSharedPreferences(PREFS, MODE_PRIVATE);
         etBotToken.setText(p.getString("bot_token", ""));
         etChatId.setText(p.getString("chat_id", ""));
+        etGasUrl.setText(p.getString("gas_url", ""));
+        etGasApiKey.setText(p.getString("gas_api_key", ""));
         etInterval.setText(String.valueOf(p.getLong("interval_sec", 5L)));
         etAwaySeconds.setText(String.valueOf(p.getLong("away_sec", 20L)));
         etAlertSeconds.setText(String.valueOf(p.getLong("alert_sec", 120L)));
@@ -418,34 +529,40 @@ public class MainActivity extends AppCompatActivity {
         long best = p.getLong("longest_session", 0L);
         long targetSec = Math.max(60L, p.getLong("target_min", 240L) * 60L);
         long awayElapsed = p.getLong("runtime_away_elapsed", 0L);
+        long sprintMin = p.getLong("sprint_target_min", 0L);
 
         String shownMode = "FOCUS".equals(mode) && confirmedAway ? "AWAY" : mode;
-        tvMode.setText("Mode: " + shownMode + (serviceRunning ? "  •  Service ON" : ""));
-        tvPresence.setText("Presence: " + (present ? "ADA" : "TIDAK ADA") + (confirmedAway ? "  • away " + awayElapsed + " dtk" : ""));
-        tvCurrentTask.setText(currentTask.isEmpty() ? "Belum ada tugas aktif" : currentTask + (currentCategory.isEmpty() ? "" : "\n" + currentCategory));
+        String sprintLabel = sprintMin > 0 && "FOCUS".equals(mode) ? " • Sprint " + sprintMin + "m" : "";
+        tvMode.setText("Mode: " + shownMode + sprintLabel + (serviceRunning ? " • Service ON" : ""));
+        tvPresence.setText("Presence: " + (present ? "ADA" : "TIDAK ADA") +
+                (confirmedAway ? " • away " + awayElapsed + " dtk" : ""));
+        tvCurrentTask.setText(currentTask.isEmpty() ? "Belum ada tugas aktif" : currentTask +
+                (currentCategory.isEmpty() ? "" : "\n" + currentCategory));
         tvToday.setText("Hari ini: " + ProductivityStore.formatDuration(dayFocus) + " / " + ProductivityStore.formatDuration(targetSec));
         tvStats.setText("Sesi: " + daySessions + "  |  Away: " + dayAway + "  |  Best: " + ProductivityStore.formatDuration(best));
         tvSession.setText("Sesi sekarang: " + ProductivityStore.formatDuration(sessionFocus) + "  |  Away: " + sessionAway);
         int progress = (int)Math.round(Math.min(100.0, dayFocus * 100.0 / targetSec) * 10.0);
         progressTarget.setProgress(progress);
         tvInbox.setText("Inbox ide: " + ProductivityStore.getInbox(this).length());
-        tvCoach.setText("Coach: " + buildCoach(p, mode, confirmedAway, dayFocus, sessionFocus, targetSec));
+
+        int pending = KinerjaSyncClient.getPendingCount(this);
+        int workCount = p.getInt("day_kinerja_count", 0);
+        tvSyncQueue.setText("Laporan kerja hari ini: " + workCount + " • Sinkronisasi tertunda: " + pending);
+        tvCoach.setText("Coach: " + buildCoach(p, mode, confirmedAway, dayFocus, sessionFocus, targetSec, pending));
     }
 
-    private String buildCoach(SharedPreferences p, String mode, boolean away, long dayFocus, long sessionFocus, long targetSec) {
+    private String buildCoach(SharedPreferences p, String mode, boolean away, long dayFocus, long sessionFocus, long targetSec, int pending) {
         String task = p.getString("current_task", "").trim();
-        if (task.isEmpty()) return "Tulis maksimal 3 target, lalu pilih SATU yang paling penting. Jangan merencanakan terlalu lama.";
-        if ("FOCUS".equals(mode) && away) return "Kembali ke meja. Jangan mengejar waktu yang hilang—cukup lanjutkan satu langkah berikutnya pada “" + task + "”.";
-        if (dayFocus >= targetSec) return "Target fokus harian sudah tercapai. Prioritaskan pekerjaan wajib dan tutup loop yang masih terbuka.";
+        if (pending > 0) return pending + " laporan kerja belum tersinkron. Tidak hilang—lanjut kerja, sync saat koneksi stabil.";
+        if (task.isEmpty()) return "Isi maksimal 3 target, lalu pilih SATU. Hindari merencanakan lebih lama daripada mengerjakan.";
+        if ("FOCUS".equals(mode) && away) return "Kembali ke meja. Jangan mengejar waktu yang hilang—cukup lanjut satu langkah pada “" + task + "”.";
+        if (dayFocus >= targetSec) return "Target fokus tercapai. Prioritaskan menutup pekerjaan wajib dan catat kinerja yang sudah selesai.";
         int social = p.getInt("d_social", 0);
-        if (social >= 3) return "HP/Sosmed sudah mengganggu " + social + " kali. Untuk sesi berikutnya, jauhkan HP utama selama 20 menit.";
+        if (social >= 3) return "HP/Sosmed sudah mengganggu " + social + " kali. Jalankan sprint 10 menit dengan HP utama dijauhkan.";
         int awayCount = p.getInt("day_away", 0);
-        if (awayCount >= 5) return "Anda sering meninggalkan meja hari ini. Gunakan sprint 15 menit: selesaikan satu unit kerja sebelum berdiri.";
-        int sessions = p.getInt("day_sessions", 0);
-        long best = p.getLong("longest_session", 0L);
-        if (sessions >= 3 && best < 15 * 60L) return "Sesi hari ini pendek-pendek. Turunkan target menjadi sprint 10 menit, bukan memaksa 25–50 menit.";
-        if ("FOCUS".equals(mode) && sessionFocus >= 45 * 60L) return "Anda sudah fokus cukup lama. Selesaikan unit sekarang lalu ambil break 5–10 menit secara sengaja.";
-        return "Jangan lihat semua pekerjaan. Kerjakan satu langkah berikutnya pada “" + task + "”.";
+        if (awayCount >= 5) return "Anda sering meninggalkan meja hari ini. Pilih sprint 10 menit dan selesaikan satu unit sebelum berdiri.";
+        if ("FOCUS".equals(mode) && sessionFocus >= 45 * 60L) return "Fokus sudah panjang. Tutup unit kerja sekarang, Capture Kerjaan, lalu BREAK 5–10 menit.";
+        return "Satu tugas, satu langkah. Ide lain → Capture Ide. Pekerjaan selesai → Capture Kerjaan.";
     }
 
     private String getCurrentTask() {

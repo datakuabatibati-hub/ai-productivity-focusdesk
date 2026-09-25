@@ -54,6 +54,7 @@ public final class ProductivityStore {
                     .putLong("focus_laporan", 0L)
                     .putLong("focus_layanan", 0L)
                     .putLong("focus_lain", 0L)
+                    .putInt("day_kinerja_count", 0)
                     .putString("day_events", "[]")
                     .apply();
         }
@@ -166,7 +167,9 @@ public final class ProductivityStore {
         s.append("Sesi           : ").append(sessions).append("\n");
         s.append("Away           : ").append(awayCount).append("x\n");
         s.append("Waktu away     : ").append(formatDuration(awayTime)).append("\n");
-        s.append("Longest focus  : ").append(formatDuration(best)).append("\n\n");
+        s.append("Longest focus  : ").append(formatDuration(best)).append("\n");
+        s.append("Capture kerja  : ").append(p.getInt("day_kinerja_count", 0)).append("\n");
+        s.append("Sync tertunda  : ").append(KinerjaSyncClient.getPendingCount(c)).append("\n\n");
 
         s.append("Distraksi\n");
         s.append("- HP/Sosmed      : ").append(social).append("\n");

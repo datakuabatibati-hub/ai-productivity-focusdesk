@@ -1,0 +1,13 @@
+<resources>
+    <color name="bg">#0B1020</color>
+    <color name="surface">#141C2F</color>
+    <color name="surface2">#1A253B</color>
+    <color name="textPrimary">#F7FAFC</color>
+    <color name="textSecondary">#A8B3C7</color>
+    <color name="accent">#7C8CFF</color>
+    <color name="accent2">#4FD1C5</color>
+    <color name="warning">#F6C453</color>
+    <color name="danger">#FF7A90</color>
+    <color name="success">#55D187</color>
+    <color name="stroke">#2A3853</color>
+</resources>

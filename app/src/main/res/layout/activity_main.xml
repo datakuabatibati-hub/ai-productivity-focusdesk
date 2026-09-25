@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="#0B1220">
+    android:background="@color/bg">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,63 +16,304 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="AI PRODUCTIVITY"
-            android:textColor="#FFFFFF"
-            android:textSize="27sp"
+            android:textColor="@color/textPrimary"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvCoach"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Focus • Voice Log • ADHD Rescue"
+            android:textColor="@color/textSecondary"
+            android:textSize="13sp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="18dp"
+            app:strokeColor="@color/stroke"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SEKARANG"
+                    android:textColor="@color/accent2"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvCurrentTask"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="5dp"
+                    android:text="Belum ada tugas aktif"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="7dp"
+                    android:text="Mode: IDLE"
+                    android:textColor="@color/accent"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPresence"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Presence: -"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvCoach"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@color/surface2"
+                    android:padding="12dp"
+                    android:text="Coach: pilih satu tugas kecil untuk dikerjakan sekarang."
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="CAPTURE SUARA"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Jangan pindah aplikasi. Ucapkan, simpan, lalu kembali ke tugas."
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCaptureIdea"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="🎙  IDE\nPARKIR DULU"
+                android:textAllCaps="false"
+                android:textSize="14sp"
+                app:backgroundTint="@color/accent"
+                app:cornerRadius="16dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnVoiceKinerja"
+                android:layout_width="0dp"
+                android:layout_height="64dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="🎙  KERJAAN\n→ GOOGLE SHEET"
+                android:textAllCaps="false"
+                android:textSize="14sp"
+                app:backgroundTint="@color/accent2"
+                app:cornerRadius="16dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvKinerjaStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:background="#172033"
-            android:padding="12dp"
-            android:text="Coach: pilih satu tugas kecil untuk dikerjakan sekarang."
-            android:textColor="#DDE7FF"
-            android:textSize="15sp" />
+            android:text="Kinerja: belum ada capture"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:text="SEKARANG"
-            android:textColor="#8FA3BF"
-            android:textSize="12sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvCurrentTask"
+            android:id="@+id/tvSyncQueue"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Belum ada tugas aktif"
-            android:textColor="#FFFFFF"
-            android:textSize="23sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="2dp"
+            android:text="Sinkronisasi: 0 tertunda"
+            android:textColor="@color/textSecondary"
+            android:textSize="12sp" />
 
-        <TextView
-            android:id="@+id/tvMode"
-            android:layout_width="wrap_content"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetrySync"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Mode: IDLE"
-            android:textColor="#7DD3FC"
-            android:textSize="16sp" />
+            android:text="SYNC ULANG CATATAN TERTUNDA"
+            android:textAllCaps="false"
+            app:cornerRadius="14dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="18dp"
+            app:strokeColor="@color/stroke"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="FOCUS METER"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvToday"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="Hari ini: 00:00:00 / 04:00:00"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/progressTarget"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="16dp"
+                    android:layout_marginTop="9dp"
+                    android:max="1000"
+                    android:progress="0"
+                    android:progressTint="@color/accent2" />
+
+                <TextView
+                    android:id="@+id/tvStats"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Sesi: 0 | Away: 0 | Best: 00:00:00"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tvSession"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Sesi sekarang: 00:00:00"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="13sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFocus"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="FOCUS"
+                        app:backgroundTint="@color/success"
+                        app:cornerRadius="14dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnBreak"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:text="BREAK"
+                        app:backgroundTint="@color/warning"
+                        app:cornerRadius="14dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDone"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:text="DONE"
+                        app:backgroundTint="@color/danger"
+                        app:cornerRadius="14dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Quick sprint"
+                    android:textColor="@color/textSecondary"
+                    android:textSize="12sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSprint10"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="10m" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSprint25"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:layout_weight="1"
+                        android:text="25m" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSprint45"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="5dp"
+                        android:layout_weight="1"
+                        android:text="45m" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
-            android:id="@+id/tvPresence"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Presence: -"
-            android:textColor="#AAB7CB"
-            android:textSize="13sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="20dp"
             android:text="TODAY'S 3"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <EditText
@@ -80,11 +322,12 @@
             android:layout_height="wrap_content"
             android:hint="1. Tugas paling penting"
             android:singleLine="true"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            android:textColor="@color/textPrimary"
+            android:textColorHint="@color/textSecondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTask1"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="KERJAKAN TUGAS 1" />
@@ -95,11 +338,12 @@
             android:layout_height="wrap_content"
             android:hint="2. Tugas penting kedua"
             android:singleLine="true"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            android:textColor="@color/textPrimary"
+            android:textColorHint="@color/textSecondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTask2"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="KERJAKAN TUGAS 2" />
@@ -110,11 +354,12 @@
             android:layout_height="wrap_content"
             android:hint="3. Tugas penting ketiga"
             android:singleLine="true"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            android:textColor="@color/textPrimary"
+            android:textColorHint="@color/textSecondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnTask3"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="KERJAKAN TUGAS 3" />
@@ -124,7 +369,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="Kategori tugas aktif"
-            android:textColor="#AAB7CB" />
+            android:textColor="@color/textSecondary" />
 
         <Spinner
             android:id="@+id/spCategory"
@@ -135,123 +380,47 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:text="FOCUS METER"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvToday"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Hari ini: 00:00:00 / 04:00:00"
-            android:textColor="#FFFFFF"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <ProgressBar
-            android:id="@+id/progressTarget"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="18dp"
-            android:layout_marginTop="8dp"
-            android:max="1000"
-            android:progress="0" />
-
-        <TextView
-            android:id="@+id/tvStats"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="7dp"
-            android:text="Sesi: 0 | Away: 0 | Best: 00:00:00"
-            android:textColor="#AAB7CB" />
-
-        <TextView
-            android:id="@+id/tvSession"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Sesi sekarang: 00:00:00"
-            android:textColor="#AAB7CB" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/btnFocus"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="FOCUS" />
-
-            <Button
-                android:id="@+id/btnBreak"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:layout_weight="1"
-                android:text="BREAK" />
-
-            <Button
-                android:id="@+id/btnDone"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:layout_weight="1"
-                android:text="DONE" />
-        </LinearLayout>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="20dp"
             android:text="ADHD RESCUE"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnDistraction"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="DISTRAKSI" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStuck"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1"
                 android:text="STUCK" />
-
-            <Button
-                android:id="@+id/btnCapture"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:layout_weight="1"
-                android:text="CAPTURE" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/tvInbox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="7dp"
+            android:layout_marginTop="8dp"
             android:text="Inbox ide: 0"
-            android:textColor="#AAB7CB" />
+            android:textColor="@color/textSecondary" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnInbox"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="BUKA INBOX IDE" />
@@ -259,116 +428,189 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="20dp"
             android:text="REKAP &amp; AI"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
+            android:textColor="@color/textPrimary"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSummary"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="LIHAT REKAP HARI INI" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnChatGPT"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="ANALISIS DI CHATGPT" />
+            android:text="ANALISIS DI CHATGPT"
+            android:textAllCaps="false"
+            app:backgroundTint="@color/accent"
+            app:cornerRadius="14dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
-            android:text="PENGATURAN"
-            android:textColor="#FFFFFF"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-
-        <EditText
-            android:id="@+id/etBotToken"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Telegram Bot Token"
-            android:inputType="textPassword"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            android:layout_marginTop="20dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="18dp"
+            app:strokeColor="@color/stroke"
+            app:strokeWidth="1dp">
 
-        <EditText
-            android:id="@+id/etChatId"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GOOGLE SHEETS / GAS"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etGasUrl"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Web App URL .../exec"
+                    android:inputType="textUri"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
+
+                <EditText
+                    android:id="@+id/etGasApiKey"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="API key GAS"
+                    android:inputType="textPassword"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestGas"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TES KONEKSI GOOGLE SHEET" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Telegram Chat ID"
-            android:inputType="text"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            android:layout_marginTop="12dp"
+            app:cardBackgroundColor="@color/surface"
+            app:cardCornerRadius="18dp"
+            app:strokeColor="@color/stroke"
+            app:strokeWidth="1dp">
 
-        <EditText
-            android:id="@+id/etInterval"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Scan kamera (detik), default 5"
-            android:inputType="number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <EditText
-            android:id="@+id/etAwaySeconds"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Konfirmasi away (detik), default 20"
-            android:inputType="number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="GARMIN / TELEGRAM &amp; FOCUS"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/etAlertSeconds"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Garmin mengingatkan setelah away (detik), default 120"
-            android:inputType="number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+                <EditText
+                    android:id="@+id/etBotToken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Telegram Bot Token"
+                    android:inputType="textPassword"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
 
-        <EditText
-            android:id="@+id/etAutoBreakMinutes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Auto-break setelah away (menit), default 10"
-            android:inputType="number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+                <EditText
+                    android:id="@+id/etChatId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Telegram Chat ID"
+                    android:inputType="text"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
 
-        <EditText
-            android:id="@+id/etTargetMinutes"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Target fokus harian (menit), default 240"
-            android:inputType="number"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#61708A" />
+                <EditText
+                    android:id="@+id/etInterval"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Scan kamera (detik), default 5"
+                    android:inputType="number"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
 
-        <Button
-            android:id="@+id/btnSaveSettings"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="SIMPAN SEMUA" />
+                <EditText
+                    android:id="@+id/etAwaySeconds"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Konfirmasi away (detik), default 20"
+                    android:inputType="number"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
 
-        <Button
-            android:id="@+id/btnTestTelegram"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="TES GARMIN / TELEGRAM" />
+                <EditText
+                    android:id="@+id/etAlertSeconds"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Garmin alert setelah away (detik), default 120"
+                    android:inputType="number"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
+
+                <EditText
+                    android:id="@+id/etAutoBreakMinutes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Auto-break setelah away (menit), default 10"
+                    android:inputType="number"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
+
+                <EditText
+                    android:id="@+id/etTargetMinutes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Target fokus harian (menit), default 240"
+                    android:inputType="number"
+                    android:textColor="@color/textPrimary"
+                    android:textColorHint="@color/textSecondary" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSaveSettings"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="SIMPAN PENGATURAN"
+                    app:backgroundTint="@color/accent"
+                    app:cornerRadius="14dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestTelegram"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="TES GARMIN / TELEGRAM" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
             android:id="@+id/tvStatus"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:paddingBottom="30dp"
-            android:text="Siap. Pilih tugas, lalu tekan FOCUS."
-            android:textColor="#7E8DA6"
+            android:text="Siap. Pilih satu tugas, lalu fokus."
+            android:textColor="@color/textSecondary"
             android:textSize="12sp" />
 
     </LinearLayout>

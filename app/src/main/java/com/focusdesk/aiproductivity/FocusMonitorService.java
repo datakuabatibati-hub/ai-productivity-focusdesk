@@ -72,6 +72,7 @@ public class FocusMonitorService extends LifecycleService {
     private long alert2Ms = 300_000L;
     private long autoBreakMs = 600_000L;
     private long targetFocusSec = 4L * 60L * 60L;
+    private long sprintTargetSec = 0L;
 
     private long dayFocusSec = 0L;
     private long dayAwayTimeSec = 0L;
@@ -95,6 +96,7 @@ public class FocusMonitorService extends LifecycleService {
             checkDateRollover();
             checkpointIfNeeded();
             checkAwayEscalation();
+            checkSprintTarget();
             persistRuntime();
             updateNotification();
             handler.postDelayed(this, 5000L);
@@ -295,6 +297,12 @@ public class FocusMonitorService extends LifecycleService {
         String selectedCategory = prefs.getString("current_category", "Lainnya");
         if (selectedTask.isEmpty()) return;
 
+        // Jangan reset segment timer bila tombol FOCUS terpencet lagi saat sudah fokus.
+        if (mode == Mode.FOCUS) {
+            updateNotification();
+            return;
+        }
+
         if (mode == Mode.IDLE) {
             sessionFocusSec = 0L;
             sessionAway = 0;
@@ -372,6 +380,8 @@ public class FocusMonitorService extends LifecycleService {
         confirmedAway = false;
         alert1Sent = false;
         alert2Sent = false;
+        prefs.edit().putLong("sprint_target_min", 0L).putBoolean("runtime_sprint_alerted", false).apply();
+        sprintTargetSec = 0L;
         stopCamera();
         releaseWakeLock();
         persistRuntime();
@@ -401,6 +411,24 @@ public class FocusMonitorService extends LifecycleService {
         saveStats();
     }
 
+
+    private void checkSprintTarget() {
+        if (mode != Mode.FOCUS || sprintTargetSec <= 0L) return;
+        if (prefs.getBoolean("runtime_sprint_alerted", false)) return;
+
+        long current = sessionFocusSec;
+        if (!confirmedAway && segmentStartedAt > 0L) {
+            current += Math.max(0L, (SystemClock.elapsedRealtime() - segmentStartedAt) / 1000L);
+        }
+        if (current >= sprintTargetSec) {
+            prefs.edit().putBoolean("runtime_sprint_alerted", true).apply();
+            long minutes = Math.max(1L, sprintTargetSec / 60L);
+            sendTelegram("⌚ SPRINT SELESAI\n\n" + minutes + " menit tercapai.\nTugas: " + safeTask() +
+                    "\n\nPilih: DONE jika unit selesai, BREAK jika butuh jeda, atau lanjutkan dengan sadar.");
+            ProductivityStore.addEvent(this, "SPRINT_DONE", sessionTask, sessionCategory, sprintTargetSec, minutes + " menit");
+        }
+    }
+
     private void loadSettings() {
         detectionIntervalMs = clamp(prefs.getLong("interval_sec", 5L), 2L, 60L) * 1000L;
         awayDetectMs = clamp(prefs.getLong("away_sec", 20L), 10L, 600L) * 1000L;
@@ -408,6 +436,7 @@ public class FocusMonitorService extends LifecycleService {
         alert2Ms = Math.max(alert1Ms + 60_000L, 300_000L);
         autoBreakMs = Math.max(alert2Ms + 60_000L, clamp(prefs.getLong("auto_break_min", 10L), 2L, 120L) * 60_000L);
         targetFocusSec = clamp(prefs.getLong("target_min", 240L), 15L, 1440L) * 60L;
+        sprintTargetSec = Math.max(0L, prefs.getLong("sprint_target_min", 0L)) * 60L;
     }
 
     private void loadStats() {
@@ -474,6 +503,8 @@ public class FocusMonitorService extends LifecycleService {
                     .putInt("d_social", 0).putInt("d_people", 0).putInt("d_thought", 0).putInt("d_urgent", 0)
                     .putLong("focus_simkah", 0L).putLong("focus_surat", 0L).putLong("focus_laporan", 0L)
                     .putLong("focus_layanan", 0L).putLong("focus_lain", 0L)
+                    .putInt("day_kinerja_count", 0)
+                    .putLong("sprint_target_min", 0L).putBoolean("runtime_sprint_alerted", false)
                     .putString("day_events", "[]")
                     .apply();
             saveStats();
